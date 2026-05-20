@@ -1,6 +1,6 @@
 defmodule Inmobiliaria.ClienteMenu do
   # Asegúrate de poner la IP de tu equipo Fedora
-  @host ~c"192.168.1.4"
+  @host ~c"localhost"
   @port 4040
 
   @ciudades ["Armenia", "Bogota", "Cali", "Medellin", "Pereira", "Manizales", "Ibague"]
@@ -175,11 +175,18 @@ defp procesar_opcion(socket, op, st) do
     end
     enviar(socket, "connect #{usuario} #{password} #{rol}")
     respuesta = leer_respuesta(socket)
+
+    if String.contains?(respuesta, "[ok]") do
+      rol = extraer_entre(respuesta, "(", ")")
+      IO.puts("  Registro exitoso. Ya estás conectado como #{usuario} (#{rol}).")
+      bucle_menu(socket, %{username: usuario, rol: rol})
+    else
       if String.contains?(respuesta, "[error]") do
         IO.puts("  Ese usuario ya existe con otra contrasena.")
         IO.puts("  Si es tuyo, usa la opcion 1 para iniciar sesion.")
+      end
+      bucle_menu(socket, st)
     end
-    bucle_menu(socket, st)
   end
 
   defp cerrar_sesion(socket) do
@@ -224,27 +231,73 @@ defp procesar_opcion(socket, op, st) do
 
   defp comprar_propiedad(socket) do
     IO.puts("\n--- Comprar Propiedad -------------------------")
-    listar_propiedades(socket)
-    id = pedir("  ID de la propiedad a comprar (ej: prop_001): ")
-    confirmacion = pedir("  Confirma la compra de #{id}? (s/n): ")
-    if String.downcase(confirmacion) == "s" do
-      enviar(socket, "buy_property #{id}")
-      leer_respuesta(socket)
+    IO.puts("  Filtros opcionales (Enter para omitir):")
+
+    tipo      = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
+    modalidad = pedir_opcion("  Modalidad", ["venta", "arriendo"])
+    ciudad    = pedir_ciudad()
+
+    filtros =
+      [
+        (if tipo != "",      do: "tipo=#{tipo}"),
+        (if modalidad != "", do: "modalidad=#{modalidad}"),
+        (if ciudad != "",    do: "ubicacion=#{ciudad}")
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(" ")
+
+    cmd = if filtros == "", do: "list_properties", else: "list_properties #{filtros}"
+    enviar(socket, cmd)
+    respuesta = leer_respuesta(socket)
+
+    if String.contains?(respuesta, "[info] No hay propiedades") do
+      IO.puts("  No se encontraron propiedades con esos filtros.")
+      IO.puts("  Volviendo al menu principal...")
     else
-      IO.puts("  Compra cancelada.")
+      id = pedir("  ID de la propiedad a comprar (ej: prop_001): ")
+      confirmacion = pedir("  Confirma la compra de #{id}? (s/n): ")
+      if String.downcase(confirmacion) == "s" do
+        enviar(socket, "buy_property #{id}")
+        leer_respuesta(socket)
+      else
+        IO.puts("  Compra cancelada.")
+      end
     end
   end
 
   defp arrendar_propiedad(socket) do
     IO.puts("\n--- Arrendar Propiedad ------------------------")
-    listar_propiedades(socket)
-    id = pedir("  ID de la propiedad a arrendar (ej: prop_001): ")
-    confirmacion = pedir("  Confirma el arriendo de #{id}? (s/n): ")
-    if String.downcase(confirmacion) == "s" do
-      enviar(socket, "rent_property #{id}")
-      leer_respuesta(socket)
+    IO.puts("  Filtros opcionales (Enter para omitir):")
+
+    tipo      = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
+    modalidad = pedir_opcion("  Modalidad", ["venta", "arriendo"])
+    ciudad    = pedir_ciudad()
+
+    filtros =
+      [
+        (if tipo != "",      do: "tipo=#{tipo}"),
+        (if modalidad != "", do: "modalidad=#{modalidad}"),
+        (if ciudad != "",    do: "ubicacion=#{ciudad}")
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(" ")
+
+    cmd = if filtros == "", do: "list_properties", else: "list_properties #{filtros}"
+    enviar(socket, cmd)
+    respuesta = leer_respuesta(socket)
+
+    if String.contains?(respuesta, "[info] No hay propiedades") do
+      IO.puts("  No se encontraron propiedades con esos filtros.")
+      IO.puts("  Volviendo al menu principal...")
     else
-      IO.puts("  Arriendo cancelado.")
+      id = pedir("  ID de la propiedad a arrendar (ej: prop_001): ")
+      confirmacion = pedir("  Confirma el arriendo de #{id}? (s/n): ")
+      if String.downcase(confirmacion) == "s" do
+        enviar(socket, "rent_property #{id}")
+        leer_respuesta(socket)
+      else
+        IO.puts("  Arriendo cancelado.")
+      end
     end
   end
 

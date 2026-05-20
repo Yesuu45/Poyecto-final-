@@ -1,1 +1,42 @@
 2026-05-20; cliente=yesuu; responsable=esteban; propiedad=prop_001; operacion=compra; ubicacion=Armenia; precio=1000000; status=Completada
+2026-05-19; cliente=carlos; responsable=catalina; propiedad=prop_002; operacion=reserva; ubicacion=Pereira; precio=2500000; status=Completada
+2026-05-18; cliente=maria; responsable=diana; propiedad=prop_003; operacion=arriendo; ubicacion=Manizales; precio=800000; status=Completada
+2026-05-17; cliente=juan; responsable=manuel; propiedad=prop_004; operacion=reserva; ubicacion=Armenia; precio=1800000; status=Completada
+2026-05-16; cliente=ana; responsable=gabriel; propiedad=prop_005; operacion=arriendo; ubicacion=Pereira; precio=1200000; status=Completada
+2026-05-15; cliente=pedro; responsable=sofia; propiedad=prop_006; operacion=compra; ubicacion=Dosquebradas; precio=2000000; status=Completada
+2026-05-14; cliente=lucia; responsable=francisco; propiedad=prop_007; operacion=compra; ubicacion=Cartago; precio=3500000; status=Completada
+2026-05-13; cliente=luis; responsable=josefina; propiedad=prop_008; operacion=arriendo; ubicacion=Armenia; precio=600000; status=Completada
+2026-05-12; cliente=diego; responsable=rosa; propiedad=prop_009; operacion=arriendo; ubicacion=Pereira; precio=1500000; status=Completada
+2026-05-11; cliente=catalina; responsable=pablo; propiedad=prop_010; operacion=compra; ubicacion=Manizales; precio=1700000; status=Completada
+2026-05-10; cliente=manuel; responsable=diana; propiedad=prop_011; operacion=compra; ubicacion=Armenia; precio=2200000; status=Completada
+2026-05-09; cliente=sofia; responsable=mariana; propiedad=prop_012; operacion=arriendo; ubicacion=Dosquebradas; precio=700000; status=Completada
+2026-05-08; cliente=francisco; responsable=victor; propiedad=prop_013; operacion=arriendo; ubicacion=Cartago; precio=950000; status=Completada
+2026-05-07; cliente=rosa; responsable=elena; propiedad=prop_014; operacion=compra; ubicacion=Pereira; precio=2100000; status=Completada
+2026-05-06; cliente=pablo; responsable=sergio; propiedad=prop_015; operacion=reserva; ubicacion=Armenia; precio=1600000; status=Completada
+2026-05-05; cliente=elena; responsable=isabel; propiedad=prop_016; operacion=arriendo; ubicacion=Manizales; precio=550000; status=Completada
+2026-05-04; cliente=sergio; responsable=alejandro; propiedad=prop_017; operacion=arriendo; ubicacion=Dosquebradas; precio=1100000; status=Completada
+2026-05-03; cliente=andrea; responsable=carmen; propiedad=prop_018; operacion=compra; ubicacion=Armenia; precio=2300000; status=Completada
+2026-05-02; cliente=diana; responsable=catalina; propiedad=prop_019; operacion=compra; ubicacion=Pereira; precio=2800000; status=Completada
+2026-05-01; cliente=gabriel; responsable=gabriel; propiedad=prop_020; operacion=arriendo; ubicacion=Cartago; precio=650000; status=Completada
+2026-04-30; cliente=yesuu; responsable=manuel; propiedad=prop_021; operacion=compra; ubicacion=Manizales; precio=1900000; status=Completada
+2026-04-29; cliente=carlos; responsable=sofia; propiedad=prop_022; operacion=compra; ubicacion=Armenia; precio=2600000; status=Completada
+2026-04-28; cliente=maria; responsable=francisco; propiedad=prop_023; operacion=arriendo; ubicacion=Dosquebradas; precio=1000000; status=Completada
+2026-04-27; cliente=juan; responsable=josefina; propiedad=prop_024; operacion=arriendo; ubicacion=Pereira; precio=700000; status=Completada
+2026-04-26; cliente=ana; responsable=rosa; propiedad=prop_025; operacion=compra; ubicacion=Cartago; precio=1500000; status=Completada
+2026-04-25; cliente=pedro; responsable=pablo; propiedad=prop_026; operacion=compra; ubicacion=Manizales; precio=2400000; status=Completada
+2026-04-24; cliente=lucia; responsable=diana; propiedad=prop_027; operacion=arriendo; ubicacion=Armenia; precio=1300000; status=Completada
+2026-04-23; cliente=luis; responsable=mariana; propiedad=prop_028; operacion=compra; ubicacion=Dosquebradas; precio=1950000; status=Completada
+2026-04-22; cliente=diego; responsable=victor; propiedad=prop_029; operacion=arriendo; ubicacion=Pereira; precio=900000; status=Completada
+2026-04-21; cliente=catalina; responsable=elena; propiedad=prop_030; operacion=compra; ubicacion=Cartago; precio=2200000; status=Completada
+2026-04-20; cliente=manuel; responsable=sergio; propiedad=prop_001; operacion=consulta; ubicacion=Armenia; precio=1000000; status=Fallida
+2026-04-19; cliente=sofia; responsable=andrea; propiedad=prop_002; operacion=consulta; ubicacion=Pereira; precio=2500000; status=Exitosa
+2026-04-18; cliente=francisco; responsable=diana; propiedad=prop_003; operacion=consulta; ubicacion=Manizales; precio=800000; status=Exitosa
+2026-04-17; cliente=rosa; responsable=gabriel; propiedad=prop_004; operacion=consulta; ubicacion=Armenia; precio=1800000; status=Exitosa
+2026-04-16; cliente=pablo; responsable=josefina; propiedad=prop_005; operacion=consulta; ubicacion=Pereira; precio=1200000; status=Exitosa
+2026-04-15; cliente=elena; responsable=mariana; propiedad=prop_006; operacion=consulta; ubicacion=Dosquebradas; precio=2000000; status=Exitosa
+2026-04-14; cliente=sergio; responsable=victor; propiedad=prop_007; operacion=consulta; ubicacion=Cartago; precio=3500000; status=Exitosa
+2026-04-13; cliente=andrea; responsable=alejandro; propiedad=prop_008; operacion=consulta; ubicacion=Armenia; precio=600000; status=Exitosa
+2026-04-12; cliente=diana; responsable=carmen; propiedad=prop_009; operacion=consulta; ubicacion=Pereira; precio=1500000; status=Exitosa
+2026-04-11; cliente=gabriel; responsable=catalina; propiedad=prop_010; operacion=consulta; ubicacion=Manizales; precio=1700000; status=Exitosa
+2026-05-20; cliente=Alejito123; responsable=diana; propiedad=prop_044; operacion=arriendo; ubicacion=Armenia; precio=650000; status=Completada
+2026-05-20; cliente=Alejito; responsable=diego; propiedad=prop_043; operacion=compra; ubicacion=Armenia; precio=2000000; status=Completada
