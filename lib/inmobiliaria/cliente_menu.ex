@@ -49,12 +49,12 @@ defp mostrar_menu("cliente") do
     |  1. Cerrar sesion                            |
     |  2. Ver propiedades disponibles              |
     |  3. Ver ranking                              |
-    |  4. Ver mis mensajes                         |  <-- Nueva opción
-    |  5. Enviar mensaje a propietario             |  <-- Desplazada
-    |  6. Comprar propiedad                        |  <-- Desplazada
-    |  7. Arrendar propiedad                       |  <-- Desplazada
-    |  8. Ver mi puntaje                           |  <-- Desplazada
-    |  9. Salir                                    |  <-- Desplazada
+    |  4. Ver mis mensajes                         |
+    |  5. Enviar mensaje a propietario             |
+    |  6. Comprar propiedad                        |
+    |  7. Arrendar propiedad                       |
+    |  8. Ver mi puntaje                           |  
+    |  9. Salir                                    |
     +----------------------------------------------+
     """)
   end
