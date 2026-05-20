@@ -1,5 +1,4 @@
 defmodule Inmobiliaria.ClienteMenu do
-  # Asegúrate de poner la IP de tu equipo Fedora
   @host ~c"localhost"
   @port 4040
 
@@ -44,7 +43,7 @@ defmodule Inmobiliaria.ClienteMenu do
     """)
   end
 
-defp mostrar_menu("cliente") do
+  defp mostrar_menu("cliente") do
     IO.puts("""
     +--- MENU CLIENTE ------------------------------+
     |  1. Cerrar sesion                            |
@@ -74,7 +73,7 @@ defp mostrar_menu("cliente") do
     """)
   end
 
-defp procesar_opcion(socket, op, st) do
+  defp procesar_opcion(socket, op, st) do
     case {op, st.rol} do
       # --- MENU PRINCIPAL (Sin sesion) ---
       {"1", nil} -> iniciar_sesion(socket, st)
@@ -98,9 +97,7 @@ defp procesar_opcion(socket, op, st) do
         mostrar_ranking(socket)
         bucle_menu(socket, st)
       {"4", "cliente"} ->
-        IO.puts("\n--- Mis Mensajes Recibidos ---")
-        enviar(socket, "my_messages")
-        leer_respuesta(socket)
+        ver_mensajes_cliente(socket)
         bucle_menu(socket, st)
       {"5", "cliente"} ->
         enviar_mensaje(socket)
@@ -127,7 +124,7 @@ defp procesar_opcion(socket, op, st) do
         mostrar_ranking(socket)
         bucle_menu(socket, st)
       {"4", r} when r in ["vendedor", "arrendador"] ->
-        ver_y_responder_mensajes(socket, st)
+        ver_y_responder_mensajes(socket)
         bucle_menu(socket, st)
       {"5", r} when r in ["vendedor", "arrendador"] ->
         publicar_propiedad(socket)
@@ -137,7 +134,6 @@ defp procesar_opcion(socket, op, st) do
         bucle_menu(socket, st)
       {"7", r} when r in ["vendedor", "arrendador"] -> cerrar(socket)
 
-      # --- CASO POR DEFECTO ---
       _ ->
         IO.puts("  Opcion no valida, intente de nuevo.")
         bucle_menu(socket, st)
@@ -154,11 +150,12 @@ defp procesar_opcion(socket, op, st) do
       rol = extraer_entre(respuesta, "(", ")")
       bucle_menu(socket, %{username: usuario, rol: rol})
     else
+      IO.puts("  Verifique su usuario y contrasena e intente de nuevo.")
       bucle_menu(socket, st)
     end
   end
 
- defp registrarse(socket, st) do
+  defp registrarse(socket, st) do
     IO.puts("\n--- Registro de Usuario -----------------------")
     IO.puts("  NOTA: Si ya tienes cuenta, usa la opcion 1.")
     usuario  = pedir_sin_espacios("  Nombre de usuario (sin espacios): ")
@@ -175,16 +172,13 @@ defp procesar_opcion(socket, op, st) do
     end
     enviar(socket, "connect #{usuario} #{password} #{rol}")
     respuesta = leer_respuesta(socket)
-
     if String.contains?(respuesta, "[ok]") do
-      rol = extraer_entre(respuesta, "(", ")")
-      IO.puts("  Registro exitoso. Ya estás conectado como #{usuario} (#{rol}).")
-      bucle_menu(socket, %{username: usuario, rol: rol})
+      rol_obtenido = extraer_entre(respuesta, "(", ")")
+      IO.puts("  Registro exitoso! Conectado como #{usuario} (#{rol_obtenido}).")
+      bucle_menu(socket, %{username: usuario, rol: rol_obtenido})
     else
-      if String.contains?(respuesta, "[error]") do
-        IO.puts("  Ese usuario ya existe con otra contrasena.")
-        IO.puts("  Si es tuyo, usa la opcion 1 para iniciar sesion.")
-      end
+      IO.puts("  Ese usuario ya existe con otra contrasena.")
+      IO.puts("  Si es tuyo, usa la opcion 1 para iniciar sesion.")
       bucle_menu(socket, st)
     end
   end
@@ -195,14 +189,42 @@ defp procesar_opcion(socket, op, st) do
     IO.puts("  Sesion cerrada correctamente.")
   end
 
+  # Cliente: solo ve sus mensajes, incluyendo respuestas del vendedor
+  defp ver_mensajes_cliente(socket) do
+    IO.puts("\n--- Mis Mensajes ------------------------------")
+    IO.puts("  (Aqui veras mensajes recibidos y respuestas de propietarios)")
+    enviar(socket, "my_messages")
+    leer_respuesta(socket)
+  end
+
+  # Vendedor/Arrendador: ve mensajes y puede responder directamente al cliente
+  defp ver_y_responder_mensajes(socket) do
+    IO.puts("\n--- Mis Mensajes ------------------------------")
+    enviar(socket, "my_messages")
+    respuesta_raw = leer_respuesta(socket)
+
+    if String.contains?(respuesta_raw, "[info] No tienes mensajes") do
+      IO.puts("  No hay mensajes para responder.")
+    else
+      responder = pedir("  Desea responder algun mensaje? (s/n): ")
+      if String.downcase(responder) == "s" do
+        IO.puts("  Ingrese los datos del mensaje a responder:")
+        IO.puts("  (El cliente lo vera en su bandeja de mensajes)")
+        destinatario = pedir_sin_espacios("  Usuario del cliente a responder: ")
+        prop_id      = pedir("  ID de la propiedad (ej: prop_001): ")
+        texto        = pedir("  Tu respuesta: ")
+        enviar(socket, "reply_message #{destinatario} #{prop_id} #{texto}")
+        leer_respuesta(socket)
+      end
+    end
+  end
+
   defp listar_propiedades(socket) do
     IO.puts("\n--- Propiedades Disponibles -------------------")
-    IO.puts("  Filtros opcionales (Enter para omitir):")
-
+    IO.puts("  Filtros opcionales:")
     tipo      = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
     modalidad = pedir_opcion("  Modalidad", ["venta", "arriendo"])
     ciudad    = pedir_ciudad()
-
     filtros =
       [
         (if tipo != "",      do: "tipo=#{tipo}"),
@@ -211,7 +233,6 @@ defp procesar_opcion(socket, op, st) do
       ]
       |> Enum.reject(&is_nil/1)
       |> Enum.join(" ")
-
     cmd = if filtros == "", do: "list_properties", else: "list_properties #{filtros}"
     enviar(socket, cmd)
     leer_respuesta(socket)
@@ -231,12 +252,10 @@ defp procesar_opcion(socket, op, st) do
 
   defp comprar_propiedad(socket) do
     IO.puts("\n--- Comprar Propiedad -------------------------")
-    IO.puts("  Filtros opcionales (Enter para omitir):")
-
+    IO.puts("  Filtros opcionales:")
     tipo      = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
     modalidad = pedir_opcion("  Modalidad", ["venta", "arriendo"])
     ciudad    = pedir_ciudad()
-
     filtros =
       [
         (if tipo != "",      do: "tipo=#{tipo}"),
@@ -245,14 +264,11 @@ defp procesar_opcion(socket, op, st) do
       ]
       |> Enum.reject(&is_nil/1)
       |> Enum.join(" ")
-
     cmd = if filtros == "", do: "list_properties", else: "list_properties #{filtros}"
     enviar(socket, cmd)
     respuesta = leer_respuesta(socket)
-
     if String.contains?(respuesta, "[info] No hay propiedades") do
       IO.puts("  No se encontraron propiedades con esos filtros.")
-      IO.puts("  Volviendo al menu principal...")
     else
       id = pedir("  ID de la propiedad a comprar (ej: prop_001): ")
       confirmacion = pedir("  Confirma la compra de #{id}? (s/n): ")
@@ -267,12 +283,10 @@ defp procesar_opcion(socket, op, st) do
 
   defp arrendar_propiedad(socket) do
     IO.puts("\n--- Arrendar Propiedad ------------------------")
-    IO.puts("  Filtros opcionales (Enter para omitir):")
-
+    IO.puts("  Filtros opcionales:")
     tipo      = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
     modalidad = pedir_opcion("  Modalidad", ["venta", "arriendo"])
     ciudad    = pedir_ciudad()
-
     filtros =
       [
         (if tipo != "",      do: "tipo=#{tipo}"),
@@ -281,14 +295,11 @@ defp procesar_opcion(socket, op, st) do
       ]
       |> Enum.reject(&is_nil/1)
       |> Enum.join(" ")
-
     cmd = if filtros == "", do: "list_properties", else: "list_properties #{filtros}"
     enviar(socket, cmd)
     respuesta = leer_respuesta(socket)
-
     if String.contains?(respuesta, "[info] No hay propiedades") do
       IO.puts("  No se encontraron propiedades con esos filtros.")
-      IO.puts("  Volviendo al menu principal...")
     else
       id = pedir("  ID de la propiedad a arrendar (ej: prop_001): ")
       confirmacion = pedir("  Confirma el arriendo de #{id}? (s/n): ")
@@ -310,24 +321,6 @@ defp procesar_opcion(socket, op, st) do
     leer_respuesta(socket)
   end
 
-  defp ver_y_responder_mensajes(socket, st) do
-    IO.puts("\n--- Mis Mensajes ------------------------------")
-    enviar(socket, "my_messages")
-    leer_respuesta(socket)
-
-    IO.puts("  Desea responder algun mensaje? (s/n)")
-    responder = pedir("  > ")
-
-    if String.downcase(responder) == "s" do
-      IO.puts("\n  Para responder necesitas el ID de la propiedad del mensaje.")
-      IO.puts("  El destinatario recibira tu respuesta en sus mensajes.")
-      prop_id  = pedir("  ID de la propiedad sobre la que responde: ")
-      respuesta = pedir("  Tu respuesta: ")
-      enviar(socket, "send_message #{prop_id} #{st.username} (respuesta): #{respuesta}")
-      leer_respuesta(socket)
-    end
-  end
-
   defp mostrar_ranking(socket) do
     IO.puts("\n--- Ranking Global ----------------------------")
     enviar(socket, "ranking")
@@ -346,15 +339,12 @@ defp procesar_opcion(socket, op, st) do
     IO.puts("\n  Hasta luego!\n")
   end
 
-  # ─── Helpers de seleccion ────────────────────────────────────────────────────
-
   defp pedir_opcion(label, opciones) do
     IO.puts("#{label}:")
     IO.puts("    0. Omitir filtro")
     opciones
     |> Enum.with_index(1)
     |> Enum.each(fn {op, i} -> IO.puts("    #{i}. #{op}") end)
-
     sel = pedir("  Seleccione (0-#{length(opciones)}): ")
     case Integer.parse(sel) do
       {0, _} -> ""
@@ -369,7 +359,6 @@ defp procesar_opcion(socket, op, st) do
     @ciudades
     |> Enum.with_index(1)
     |> Enum.each(fn {c, i} -> IO.puts("    #{i}. #{c}") end)
-
     sel = pedir("  Seleccione (0-#{length(@ciudades)}): ")
     case Integer.parse(sel) do
       {0, _} -> ""
@@ -383,17 +372,14 @@ defp procesar_opcion(socket, op, st) do
     @ciudades
     |> Enum.with_index(1)
     |> Enum.each(fn {c, i} -> IO.puts("    #{i}. #{c}") end)
-
     sel = pedir("  Seleccione (1-#{length(@ciudades)}): ")
     case Integer.parse(sel) do
       {n, _} when n >= 1 and n <= length(@ciudades) -> Enum.at(@ciudades, n - 1)
       _ ->
-        IO.puts("  Opcion invalida, seleccione Armenia por defecto.")
+        IO.puts("  Opcion invalida, seleccionando Armenia por defecto.")
         "Armenia"
     end
   end
-
-  # ─── Helpers TCP ─────────────────────────────────────────────────────────────
 
   defp enviar(socket, cmd) do
     :gen_tcp.send(socket, cmd <> "\n")
@@ -403,7 +389,7 @@ defp procesar_opcion(socket, op, st) do
     leer_respuesta(socket, "")
   end
 
-defp leer_respuesta(socket, acumulado) do
+  defp leer_respuesta(socket, acumulado) do
     case :gen_tcp.recv(socket, 0, 1000) do
       {:ok, linea} ->
         IO.write("  " <> linea)
@@ -419,20 +405,23 @@ defp leer_respuesta(socket, acumulado) do
     IO.gets(prompt) |> String.trim()
   end
 
-  defp extraer_entre(texto, inicio, fin_str) do
-    case Regex.run(~r/#{Regex.escape(inicio)}([^#{Regex.escape(fin_str)}]+)#{Regex.escape(fin_str)}/, texto) do
-      [_, captura] -> captura
-      _ -> "cliente"
-    end
-  end
-
   defp pedir_sin_espacios(prompt) do
     valor = pedir(prompt)
     if String.contains?(valor, " ") do
-      IO.puts("  ERROR: El usuario no puede tener espacios. Intente de nuevo.")
+      IO.puts("  ERROR: No puede contener espacios. Intente de nuevo.")
       pedir_sin_espacios(prompt)
     else
       valor
+    end
+  end
+
+  defp extraer_entre(texto, inicio, fin_str) do
+    case Regex.run(
+      ~r/#{Regex.escape(inicio)}([^#{Regex.escape(fin_str)}]+)#{Regex.escape(fin_str)}/,
+      texto
+    ) do
+      [_, captura] -> captura
+      _ -> "cliente"
     end
   end
 end

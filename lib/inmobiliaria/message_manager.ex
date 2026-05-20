@@ -11,6 +11,11 @@ defmodule Inmobiliaria.MessageManager do
 
   def get_messages(username), do: GenServer.call(__MODULE__, {:get_messages, username})
 
+  # NUEVO: respuesta directa de vendedor/arrendador a un cliente
+  def reply_message(de, para, prop_id, texto) do
+    GenServer.cast(__MODULE__, {:reply, de, para, prop_id, texto})
+  end
+
   @impl true
   def init(_) do
     {:ok, load_messages()}
@@ -20,24 +25,32 @@ defmodule Inmobiliaria.MessageManager do
   def handle_cast({:send, de, prop_id, texto}, mensajes) do
     propietario = obtener_propietario(prop_id)
     fecha = Date.utc_today() |> Date.to_string()
-
     mensaje = %{fecha: fecha, de: de, para: propietario, propiedad: prop_id, texto: texto}
+    Persistence.write_line(@filename, format_message(mensaje))
+    {:noreply, [mensaje | mensajes]}
+  end
+
+  # NUEVO: maneja la respuesta directa al cliente
+  @impl true
+  def handle_cast({:reply, de, para, prop_id, texto}, mensajes) do
+    fecha = Date.utc_today() |> Date.to_string()
+    mensaje = %{fecha: fecha, de: de, para: para, propiedad: prop_id, texto: texto}
     Persistence.write_line(@filename, format_message(mensaje))
     {:noreply, [mensaje | mensajes]}
   end
 
   @impl true
   def handle_call({:get_messages, username}, _from, mensajes) do
-    # CORRECCIÓN: Filtramos tanto por quien envía como por quien recibe
     filtrados =
       mensajes
       |> Enum.filter(fn m -> m.para == username or m.de == username end)
       |> Enum.sort_by(& &1.fecha, :desc)
-
     {:reply, filtrados, mensajes}
   end
 
-  defp format_message(m), do: "#{m.fecha}#{@sep}#{m.de}#{@sep}#{m.para}#{@sep}#{m.propiedad}#{@sep}#{m.texto}"
+  defp format_message(m) do
+    "#{m.fecha}#{@sep}#{m.de}#{@sep}#{m.para}#{@sep}#{m.propiedad}#{@sep}#{m.texto}"
+  end
 
   defp load_messages do
     Persistence.read_lines(@filename)
