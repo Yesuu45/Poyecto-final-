@@ -1,34 +1,59 @@
 defmodule Inmobiliaria.Property do
-  use GenServer
+  use GenServer, restart: :temporary
 
-  def start_link(prop), do: GenServer.start_link(__MODULE__, prop, name: via(prop.id))
+  # --- API Pública ---
 
-  def operate(id, operacion), do: GenServer.call(via(id), {:operate, operacion})
+  def start_link(prop) do
+    GenServer.start_link(__MODULE__, prop,
+      name: {:via, Registry, {Inmobiliaria.PropertyRegistry, prop.id}}
+    )
+  end
 
-  @impl true
-  def init(prop), do: {:ok, prop}
-
-  @impl true
-  def handle_call({:operate, operacion}, _from, prop) do
-    cond do
-      prop.estado != "disponible" ->
-        {:reply, {:error, "Propiedad no disponible (Estado: #{prop.estado})"}, prop}
-
-      operacion == "compra" and prop.modalidad != "venta" ->
-        {:reply, {:error, "Propiedad no disponible para compra (Modalidad: #{prop.modalidad})"}, prop}
-
-      operacion == "arriendo" and prop.modalidad != "arriendo" ->
-        {:reply, {:error, "Propiedad no disponible para arriendo (Modalidad: #{prop.modalidad})"}, prop}
-
-      true ->
-        nuevo_estado = if operacion == "compra", do: "vendida", else: "arrendada"
-        updated = %{prop | estado: nuevo_estado}
-
-        # Sincroniza de vuelta al PropertyManager central
-        Inmobiliaria.PropertyManager.update(prop.id, nuevo_estado)
-        {:reply, {:ok, updated}, updated}
+  def operate(id, op) do
+    case GenServer.whereis({:via, Registry, {Inmobiliaria.PropertyRegistry, id}}) do
+      nil -> {:error, "Propiedad no encontrada"}
+      pid -> GenServer.call(pid, {:operate, op})
     end
   end
 
-  defp via(id), do: {:via, Registry, {Inmobiliaria.PropertyRegistry, {:property, id}}}
+  # --- Callbacks ---
+
+  @impl true
+  def init(prop) do
+    {:ok, prop}
+  end
+
+  @impl true
+  def handle_call({:operate, op}, _from, state) do
+    result =
+      case op do
+        "reservar" when state.estado == "disponible" ->
+          {:ok, %{state | estado: "reservada"}}
+
+        "compra" when state.estado == "disponible" ->
+          {:ok, %{state | estado: "vendida"}}
+
+        "compra" when state.estado == "reservada" ->
+          {:ok, %{state | estado: "vendida"}}
+
+        "arriendo" when state.estado == "disponible" ->
+          {:ok, %{state | estado: "arrendada"}}
+
+        "arriendo" when state.estado == "reservada" ->
+          {:ok, %{state | estado: "arrendada"}}
+
+        _ ->
+          {:error, "Operacion invalida. Estado actual: #{state.estado}"}
+      end
+
+    case result do
+      {:ok, new_state} ->
+        # Notificamos al PropertyManager para que persista el cambio en el archivo
+        Inmobiliaria.PropertyManager.update(new_state.id, new_state.estado)
+        {:reply, {:ok, new_state}, new_state}
+
+      {:error, razon} ->
+        {:reply, {:error, razon}, state}
+    end
+  end
 end

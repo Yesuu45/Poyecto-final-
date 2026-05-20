@@ -1,6 +1,9 @@
 defmodule Inmobiliaria.ClientHandler do
   use GenServer
+
+  # ALIAS CRÍTICO: Esto resuelve las advertencias de "undefined"
   alias Inmobiliaria.{UserManager, PropertyManager, MessageManager, Persistence}
+
   defstruct socket: nil, username: nil, rol: nil
 
   def start_link(socket), do: GenServer.start_link(__MODULE__, socket)
