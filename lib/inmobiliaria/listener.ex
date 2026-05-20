@@ -6,9 +6,13 @@ defmodule Inmobiliaria.Listener do
 
   @impl true
   def init(_) do
-    {:ok, socket} =
-      :gen_tcp.listen(@port, [:binary, packet: :line, active: false, reuseaddr: true])
-
+    {:ok, socket} = :gen_tcp.listen(@port, [
+    :binary,
+    packet: :line,
+    active: false,
+    reuseaddr: true,
+    ip: {0, 0, 0, 0} # <--- Esto permite que Windows se conecte
+    ])
     IO.puts("[Servidor] Escuchando en el puerto #{@port}...")
     spawn_link(fn -> accept_loop(socket) end)
     {:ok, socket}

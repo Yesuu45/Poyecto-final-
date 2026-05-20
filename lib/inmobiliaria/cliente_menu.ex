@@ -1,5 +1,6 @@
 defmodule Inmobiliaria.ClienteMenu do
-  @host ~c"127.0.0.1"
+  # Asegúrate de poner la IP de tu equipo Fedora
+  @host ~c"192.168.1.4"
   @port 4040
 
   @ciudades ["Armenia", "Bogota", "Cali", "Medellin", "Pereira", "Manizales", "Ibague"]
@@ -53,7 +54,7 @@ defp mostrar_menu("cliente") do
     |  5. Enviar mensaje a propietario             |
     |  6. Comprar propiedad                        |
     |  7. Arrendar propiedad                       |
-    |  8. Ver mi puntaje                           |  
+    |  8. Ver mi puntaje                           |
     |  9. Salir                                    |
     +----------------------------------------------+
     """)
