@@ -8,12 +8,14 @@ defmodule Inmobiliaria.Application do
     es_cliente = System.get_env("MODO") == "cliente"
 
     children = [
+      {Phoenix.PubSub, name: Inmobiliaria.PubSub},
       {Registry, keys: :unique, name: Inmobiliaria.PropertyRegistry},
       {DynamicSupervisor, name: Inmobiliaria.PropertySupervisor, strategy: :one_for_one},
       {DynamicSupervisor, name: Inmobiliaria.ClientSupervisor, strategy: :one_for_one},
       Inmobiliaria.UserManager,
       Inmobiliaria.PropertyManager,
-      Inmobiliaria.MessageManager
+      Inmobiliaria.MessageManager,
+      InmobiliariaWeb.Endpoint
     ] ++ if es_cliente, do: [], else: [Inmobiliaria.Listener]
 
     Supervisor.start_link(children, strategy: :one_for_one)
