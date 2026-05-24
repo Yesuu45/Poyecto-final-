@@ -1,6 +1,8 @@
 defmodule Inmobiliaria.Application do
   use Application
 
+  # Punto de entrada de la aplicación. Inicializa los archivos de datos, detecta si corre
+  # en modo cliente o servidor, y arranca todos los procesos supervisados.
   @impl true
   def start(_type, _args) do
     Inmobiliaria.Persistence.init_files()

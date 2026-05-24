@@ -3,14 +3,17 @@ defmodule Inmobiliaria.ClientHandler do
   alias Inmobiliaria.{UserManager, PropertyManager, MessageManager, Persistence}
   defstruct socket: nil, username: nil, rol: nil
 
+  # Inicia el GenServer para manejar la conexión de un cliente TCP.
   def start_link(socket), do: GenServer.start_link(__MODULE__, socket)
 
+  # Inicializa el estado del handler y programa el envío del mensaje de bienvenida.
   @impl true
   def init(socket) do
     send(self(), :bienvenida)
     {:ok, %__MODULE__{socket: socket}}
   end
 
+  # Envía el mensaje de bienvenida al cliente e inicia el loop de lectura.
   @impl true
   def handle_info(:bienvenida, state) do
     enviar(state.socket, "Bienvenido al Sistema Inmobiliaria\nEscribe help para ver comandos\n")
@@ -18,6 +21,7 @@ defmodule Inmobiliaria.ClientHandler do
     {:noreply, state}
   end
 
+  # Lee un comando del socket TCP, lo despacha y vuelve a programar la lectura.
   @impl true
   def handle_info(:leer, state) do
     case :gen_tcp.recv(state.socket, 0) do
@@ -31,6 +35,7 @@ defmodule Inmobiliaria.ClientHandler do
     end
   end
 
+  # Procesa el comando de conexión/registro de un usuario.
   defp dispatch("connect " <> resto, state) do
     case String.split(String.trim(resto), " ", trim: true) do
       [username, password | rol_lista] ->
@@ -49,6 +54,7 @@ defmodule Inmobiliaria.ClientHandler do
     end
   end
 
+  # Cierra la sesión del usuario conectado.
   defp dispatch("disconnect", state) do
     if state.username do
       enviar(state.socket, "[ok] Hasta luego #{state.username}\n")
@@ -59,6 +65,7 @@ defmodule Inmobiliaria.ClientHandler do
     end
   end
 
+  # Procesa la publicación de una propiedad, validando el rol del usuario.
   defp dispatch("publish_property " <> resto, state) do
     with :ok <- require_login(state), :ok <- require_rol(state, ["vendedor", "arrendador"]) do
       attrs = parse_attrs(String.split(String.trim(resto), " ", trim: true))
@@ -74,6 +81,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Lista propiedades disponibles según los filtros recibidos.
   defp dispatch("list_properties" <> resto, state) do
     filtros = parse_attrs(String.split(String.trim(resto), " ", trim: true))
     props = PropertyManager.list(filtros)
@@ -89,6 +97,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Procesa la compra de una propiedad, suma puntos y registra la operación.
   defp dispatch("buy_property " <> prop_id, state) do
     with :ok <- require_login(state), :ok <- require_rol(state, ["cliente"]) do
       case PropertyManager.operate(String.trim(prop_id), state.username, "compra") do
@@ -106,6 +115,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Procesa el arriendo de una propiedad, suma puntos y registra la operación.
   defp dispatch("rent_property " <> prop_id, state) do
     with :ok <- require_login(state), :ok <- require_rol(state, ["cliente"]) do
       case PropertyManager.operate(String.trim(prop_id), state.username, "arriendo") do
@@ -123,6 +133,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Envía un mensaje sobre una propiedad al propietario correspondiente.
   defp dispatch("send_message " <> resto, state) do
     with :ok <- require_login(state) do
       case String.split(String.trim(resto), " ", parts: 2) do
@@ -144,7 +155,7 @@ defmodule Inmobiliaria.ClientHandler do
   end
 
   # NUEVO: reply_message destinatario prop_id texto
-  # Permite que el vendedor/arrendador responda directamente a un cliente
+  # Permite que el vendedor/arrendador responda directamente a un cliente.
   defp dispatch("reply_message " <> resto, state) do
     with :ok <- require_login(state) do
       case String.split(String.trim(resto), " ", parts: 3) do
@@ -160,6 +171,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Muestra al usuario todos sus mensajes recibidos y enviados.
   defp dispatch("my_messages", state) do
     with :ok <- require_login(state) do
       msgs = MessageManager.get_messages(state.username)
@@ -178,6 +190,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Muestra el ranking global de usuarios.
   defp dispatch("ranking", state) do
     ranking = UserManager.ranking()
     enviar(state.socket, "=== Ranking Global ===\n")
@@ -190,6 +203,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Muestra el puntaje actual del usuario conectado.
   defp dispatch("my_score", state) do
     with :ok <- require_login(state) do
       case UserManager.obtener(state.username) do
@@ -202,6 +216,7 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Muestra la lista de comandos disponibles.
   defp dispatch("help", state) do
     enviar(state.socket, """
     === Comandos ===
@@ -227,18 +242,22 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Envía un texto al socket TCP del cliente.
   defp enviar(socket, mensaje), do: :gen_tcp.send(socket, mensaje)
 
+  # Verifica que el usuario tenga sesión activa antes de ejecutar una acción.
   defp require_login(%{username: nil}),
     do: {:error, "No estas conectado. Usa: connect usuario contrasena"}
   defp require_login(_), do: :ok
 
+  # Verifica que el usuario tenga uno de los roles permitidos para una acción.
   defp require_rol(%{rol: rol}, roles) do
     if rol in roles,
       do: :ok,
       else: {:error, "Tu rol es #{rol}. Se requiere: #{Enum.join(roles, " o ")}"}
   end
 
+  # Convierte una lista de strings con formato clave=valor en un mapa.
   defp parse_attrs(lista) do
     Enum.reduce(lista, %{}, fn item, acc ->
       case String.split(item, "=", parts: 2) do
@@ -248,6 +267,7 @@ defmodule Inmobiliaria.ClientHandler do
     end)
   end
 
+  # Guarda en results.log el registro de una compra o arriendo completada.
   defp registrar_operacion(cliente, prop, tipo_op) do
     fecha = Date.utc_today() |> Date.to_string()
     linea =

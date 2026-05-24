@@ -3,12 +3,14 @@ defmodule Inmobiliaria.Property do
 
   # --- API Pública ---
 
+  # Inicia el proceso GenServer de una propiedad individual, registrándolo en el Registry por su ID.
   def start_link(prop) do
     GenServer.start_link(__MODULE__, prop,
       name: {:via, Registry, {Inmobiliaria.PropertyRegistry, prop.id}}
     )
   end
 
+  # Localiza el proceso de una propiedad y le envía una operación (compra, arriendo, reserva).
   def operate(id, op) do
     case GenServer.whereis({:via, Registry, {Inmobiliaria.PropertyRegistry, id}}) do
       nil -> {:error, "Propiedad no encontrada"}
@@ -18,11 +20,13 @@ defmodule Inmobiliaria.Property do
 
   # --- Callbacks ---
 
+  # Inicializa el estado del proceso con los datos de la propiedad.
   @impl true
   def init(prop) do
     {:ok, prop}
   end
 
+  # Aplica la operación recibida según el estado actual de la propiedad y notifica al PropertyManager para que persista el cambio.
   @impl true
   def handle_call({:operate, op}, _from, state) do
     result =

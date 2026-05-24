@@ -5,12 +5,14 @@ defmodule Inmobiliaria.Server do
 
   # ─── API pública ────────────────────────────────────────────────────────────
 
+  # Inicia el GenServer del servidor en modo consola.
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
   # ─── Init ───────────────────────────────────────────────────────────────────
 
+  # Muestra el banner de bienvenida y lanza un proceso separado para leer comandos de la entrada estándar.
   @impl true
   def init(_) do
     IO.puts("""
@@ -31,6 +33,7 @@ defmodule Inmobiliaria.Server do
 
   # ─── Manejo de mensajes del loop ────────────────────────────────────────────
 
+  # Recibe una línea de texto desde el loop de lectura y la despacha.
   @impl true
   def handle_info({:comando, linea}, state) do
     parts = String.split(String.trim(linea), " ", trim: true)
@@ -41,6 +44,7 @@ defmodule Inmobiliaria.Server do
   # ─── Dispatcher de comandos ─────────────────────────────────────────────────
 
   # connect username password [rol]
+  # Procesa el comando de conexión/registro de usuario.
   defp dispatch(["connect", username, password | resto], state) do
     rol = List.first(resto) || "cliente"
 
@@ -57,6 +61,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # disconnect username
+  # Desconecta a un usuario de la sesión activa.
   defp dispatch(["disconnect", username], state) do
     UserManager.disconnect(username)
     IO.puts("[✓] #{username} desconectado.")
@@ -65,6 +70,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # publish_property username tipo=X modalidad=X ubicacion=X precio=X habitaciones=X area=X
+  # Publica una nueva propiedad validando el rol del usuario.
   defp dispatch(["publish_property", username | attrs_raw], state) do
     case verificar_rol(state, username, ["vendedor", "arrendador"]) do
       :ok ->
@@ -87,6 +93,7 @@ defmodule Inmobiliaria.Server do
   #   list_properties
   #   list_properties tipo=casa
   #   list_properties modalidad=venta ubicacion=Armenia
+  # Lista propiedades con filtros opcionales.
   defp dispatch(["list_properties" | filtros_raw], state) do
     filtros = parse_attrs(filtros_raw)
     props = PropertyManager.list(filtros)
@@ -102,6 +109,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # buy_property username prop_id
+  # Procesa la compra de una propiedad y asigna puntos.
   defp dispatch(["buy_property", username, prop_id], state) do
     case verificar_rol(state, username, ["cliente"]) do
       :ok ->
@@ -124,6 +132,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # rent_property username prop_id
+  # Procesa el arriendo de una propiedad y asigna puntos.
   defp dispatch(["rent_property", username, prop_id], state) do
     case verificar_rol(state, username, ["cliente"]) do
       :ok ->
@@ -146,6 +155,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # send_message username prop_id mensaje...
+  # Envía un mensaje sobre una propiedad al propietario.
   defp dispatch(["send_message", username, prop_id | palabras], state) do
     texto = Enum.join(palabras, " ")
 
@@ -161,6 +171,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # my_messages username
+  # Muestra los mensajes del usuario especificado.
   defp dispatch(["my_messages", username], state) do
     msgs = MessageManager.get_messages(username)
 
@@ -177,6 +188,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # ranking
+  # Muestra el ranking global de puntajes.
   defp dispatch(["ranking"], state) do
     ranking = UserManager.ranking()
     IO.puts("\n══════════════ Ranking Global ══════════════")
@@ -190,6 +202,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # my_score username
+  # Muestra el puntaje del usuario especificado.
   defp dispatch(["my_score", username], state) do
     case UserManager.get_user(username) do
       {:ok, user} -> IO.puts("[i] #{username} tiene #{user.puntaje} puntos.")
@@ -199,6 +212,7 @@ defmodule Inmobiliaria.Server do
   end
 
   # help
+  # Muestra todos los comandos disponibles.
   defp dispatch(["help"], state) do
     IO.puts("""
 
@@ -240,6 +254,7 @@ defmodule Inmobiliaria.Server do
 
   # ─── Loop de lectura de stdin ────────────────────────────────────────────────
 
+  # Lee líneas de la entrada estándar en un proceso separado y las envía al GenServer.
   defp input_loop(server_pid) do
     case IO.gets("") do
       :eof ->
@@ -257,6 +272,7 @@ defmodule Inmobiliaria.Server do
   # ─── Helpers ─────────────────────────────────────────────────────────────────
 
   # Parsea lista ["tipo=casa", "precio=300000"] → %{"tipo" => "casa", "precio" => "300000"}
+  # Convierte argumentos en formato clave=valor a un mapa.
   defp parse_attrs(lista) do
     Enum.reduce(lista, %{}, fn item, acc ->
       case String.split(item, "=", parts: 2) do
@@ -266,6 +282,7 @@ defmodule Inmobiliaria.Server do
     end)
   end
 
+  # Comprueba que un usuario esté conectado y tenga el rol requerido.
   defp verificar_rol(state, username, roles_permitidos) do
     case Map.get(state.sesiones, username) do
       nil ->
@@ -280,6 +297,7 @@ defmodule Inmobiliaria.Server do
     end
   end
 
+  # Imprime en consola los datos de una propiedad con formato.
   defp print_property(p) do
     IO.puts("""
       ID: #{p.id} | #{String.upcase(p.tipo)} en #{String.upcase(p.modalidad)}
@@ -289,6 +307,7 @@ defmodule Inmobiliaria.Server do
     """)
   end
 
+  # Escribe en results.log el registro de una operación completada.
   defp registrar_operacion(cliente, prop, tipo_op) do
     fecha = Date.utc_today() |> Date.to_string()
     estado_final = if tipo_op == "compra", do: "vendida", else: "arrendada"

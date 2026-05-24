@@ -1,6 +1,7 @@
 defmodule InmobiliariaWeb.ErrorHTML do
   use Phoenix.Component
 
+  # Renderiza una página HTML simple cuando una ruta no es encontrada.
   def render("404.html", assigns) do
     ~H"""
     <div style="text-align:center; padding: 50px;">
@@ -10,6 +11,7 @@ defmodule InmobiliariaWeb.ErrorHTML do
     """
   end
 
+  # Renderiza una página HTML simple cuando ocurre un error interno del servidor.
   def render("500.html", assigns) do
     ~H"""
     <div style="text-align:center; padding: 50px;">

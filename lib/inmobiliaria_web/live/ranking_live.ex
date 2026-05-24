@@ -2,6 +2,7 @@ defmodule InmobiliariaWeb.RankingLive do
   use Phoenix.LiveView
   alias Inmobiliaria.UserManager
 
+  # Carga el ranking global al montar la vista.
   def mount(params, _session, socket) do
     usuario = Map.get(params, "usuario") || get_connect_params(socket)["usuario"]
     rol     = Map.get(params, "rol") || get_connect_params(socket)["rol"]
@@ -13,6 +14,7 @@ defmodule InmobiliariaWeb.RankingLive do
     )}
   end
 
+  # Renderiza la lista del ranking con estilos diferenciados para los primeros tres puestos.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen">

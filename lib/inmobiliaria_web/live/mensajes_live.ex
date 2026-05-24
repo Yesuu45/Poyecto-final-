@@ -2,6 +2,7 @@ defmodule InmobiliariaWeb.MensajesLive do
   use Phoenix.LiveView
   alias Inmobiliaria.MessageManager
 
+  # Carga los mensajes del usuario al montar la vista.
   def mount(params, _session, socket) do
     usuario = Map.get(params, "usuario") || get_connect_params(socket)["usuario"]
     rol     = Map.get(params, "rol") || get_connect_params(socket)["rol"]
@@ -11,12 +12,14 @@ defmodule InmobiliariaWeb.MensajesLive do
     {:ok, assign(socket, mensajes: mensajes, usuario: usuario, rol: rol)}
   end
 
+  # Envía un mensaje o respuesta a otro usuario y recarga los mensajes.
   def handle_event("responder", params, socket) do
     MessageManager.reply_message(socket.assigns.usuario, params["destinatario"], params["prop_id"], params["texto"])
     mensajes = MessageManager.get_messages(socket.assigns.usuario)
     {:noreply, put_flash(assign(socket, mensajes: mensajes), :info, "✓ Mensaje enviado")}
   end
 
+  # Renderiza el historial de mensajes y el formulario de respuesta/envío.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen">

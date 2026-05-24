@@ -4,6 +4,7 @@ defmodule Inmobiliaria.ClienteMenu do
 
   @ciudades ["Armenia", "Bogota", "Cali", "Medellin", "Pereira", "Manizales", "Ibague"]
 
+  # Conecta al servidor TCP e inicia el menú interactivo.
   def iniciar do
     IO.puts("=== Sistema de Gestion Inmobiliaria v1.0 ===")
     IO.puts("=== Universidad del Quindio              ===")
@@ -18,6 +19,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Muestra el menú principal en bucle según el estado de sesión del usuario.
   defp bucle_menu(socket, st) do
     IO.puts("\n+------------------------------------------+")
     if st.username do
@@ -31,6 +33,7 @@ defmodule Inmobiliaria.ClienteMenu do
     procesar_opcion(socket, opcion, st)
   end
 
+  # Renderiza el menú para un usuario sin sesión iniciada.
   defp mostrar_menu(nil) do
     IO.puts("""
     +--- MENU PRINCIPAL ----------------------------+
@@ -43,6 +46,7 @@ defmodule Inmobiliaria.ClienteMenu do
     """)
   end
 
+  # Renderiza el menú para un usuario con rol cliente.
   defp mostrar_menu("cliente") do
     IO.puts("""
     +--- MENU CLIENTE ------------------------------+
@@ -59,6 +63,7 @@ defmodule Inmobiliaria.ClienteMenu do
     """)
   end
 
+  # Renderiza el menú para un usuario con rol vendedor o arrendador.
   defp mostrar_menu(r) when r in ["vendedor", "arrendador"] do
     IO.puts("""
     +--- MENU #{String.upcase(r)} --------------------------+
@@ -73,6 +78,7 @@ defmodule Inmobiliaria.ClienteMenu do
     """)
   end
 
+  # Despacha la opción seleccionada por el usuario al flujo de acción correspondiente.
   defp procesar_opcion(socket, op, st) do
     case {op, st.rol} do
       # --- MENU PRINCIPAL (Sin sesion) ---
@@ -140,6 +146,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Solicita credenciales y conecta al usuario.
   defp iniciar_sesion(socket, st) do
     IO.puts("\n--- Iniciar Sesion ----------------------------")
     usuario  = pedir_sin_espacios("  Usuario (sin espacios): ")
@@ -155,6 +162,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Guía al usuario para crear una cuenta nueva eligiendo su rol.
   defp registrarse(socket, st) do
     IO.puts("\n--- Registro de Usuario -----------------------")
     IO.puts("  NOTA: Si ya tienes cuenta, usa la opcion 1.")
@@ -183,6 +191,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Envía el comando de desconexión al servidor.
   defp cerrar_sesion(socket) do
     enviar(socket, "disconnect")
     leer_respuesta(socket)
@@ -190,6 +199,7 @@ defmodule Inmobiliaria.ClienteMenu do
   end
 
   # Cliente: solo ve sus mensajes, incluyendo respuestas del vendedor
+  # Muestra los mensajes del cliente (enviados y recibidos).
   defp ver_mensajes_cliente(socket) do
     IO.puts("\n--- Mis Mensajes ------------------------------")
     IO.puts("  (Aqui veras mensajes recibidos y respuestas de propietarios)")
@@ -198,6 +208,7 @@ defmodule Inmobiliaria.ClienteMenu do
   end
 
   # Vendedor/Arrendador: ve mensajes y puede responder directamente al cliente
+  # Muestra los mensajes al vendedor/arrendador y le permite responder directamente a un cliente.
   defp ver_y_responder_mensajes(socket) do
     IO.puts("\n--- Mis Mensajes ------------------------------")
     enviar(socket, "my_messages")
@@ -219,6 +230,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Presenta filtros opcionales y muestra las propiedades que coincidan.
   defp listar_propiedades(socket) do
     IO.puts("\n--- Propiedades Disponibles -------------------")
     IO.puts("  Filtros opcionales:")
@@ -238,6 +250,7 @@ defmodule Inmobiliaria.ClienteMenu do
     leer_respuesta(socket)
   end
 
+  # Solicita los datos de la propiedad y la publica en el servidor.
   defp publicar_propiedad(socket) do
     IO.puts("\n--- Publicar Propiedad ------------------------")
     tipo         = pedir_opcion("  Tipo", ["casa", "apartamento", "local", "oficina"])
@@ -250,6 +263,7 @@ defmodule Inmobiliaria.ClienteMenu do
     leer_respuesta(socket)
   end
 
+  # Muestra propiedades disponibles y procesa la compra de una de ellas con confirmación.
   defp comprar_propiedad(socket) do
     IO.puts("\n--- Comprar Propiedad -------------------------")
     IO.puts("  Filtros opcionales:")
@@ -281,6 +295,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Muestra propiedades disponibles y procesa el arriendo con confirmación.
   defp arrendar_propiedad(socket) do
     IO.puts("\n--- Arrendar Propiedad ------------------------")
     IO.puts("  Filtros opcionales:")
@@ -312,6 +327,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Solicita el ID de una propiedad y un texto, y envía el mensaje al propietario.
   defp enviar_mensaje(socket) do
     IO.puts("\n--- Enviar Mensaje a Propietario --------------")
     listar_propiedades(socket)
@@ -321,24 +337,28 @@ defmodule Inmobiliaria.ClienteMenu do
     leer_respuesta(socket)
   end
 
+  # Solicita y muestra el ranking global al servidor.
   defp mostrar_ranking(socket) do
     IO.puts("\n--- Ranking Global ----------------------------")
     enviar(socket, "ranking")
     leer_respuesta(socket)
   end
 
+  # Solicita y muestra el puntaje actual del usuario.
   defp ver_puntaje(socket) do
     IO.puts("\n--- Mi Puntaje --------------------------------")
     enviar(socket, "my_score")
     leer_respuesta(socket)
   end
 
+  # Desconecta y cierra el socket TCP.
   defp cerrar(socket) do
     enviar(socket, "disconnect")
     :gen_tcp.close(socket)
     IO.puts("\n  Hasta luego!\n")
   end
 
+  # Presenta una lista numerada de opciones al usuario y obtiene su selección.
   defp pedir_opcion(label, opciones) do
     IO.puts("#{label}:")
     IO.puts("    0. Omitir filtro")
@@ -353,6 +373,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Muestra la lista de ciudades con opción de omitir el filtro.
   defp pedir_ciudad do
     IO.puts("  Ciudad:")
     IO.puts("    0. Omitir filtro")
@@ -367,6 +388,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Muestra la lista de ciudades sin opción de omitir (campo requerido).
   defp pedir_ciudad_obligatoria do
     IO.puts("  Ciudad:")
     @ciudades
@@ -381,14 +403,17 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Envía un comando al servidor por el socket TCP.
   defp enviar(socket, cmd) do
     :gen_tcp.send(socket, cmd <> "\n")
   end
 
+  # Lee y acumula líneas de respuesta del servidor hasta que se agote el timeout.
   defp leer_respuesta(socket) do
     leer_respuesta(socket, "")
   end
 
+  # Variante interna acumuladora de leer_respuesta.
   defp leer_respuesta(socket, acumulado) do
     case :gen_tcp.recv(socket, 0, 1000) do
       {:ok, linea} ->
@@ -401,10 +426,12 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Lee una línea de entrada del usuario desde consola.
   defp pedir(prompt) do
     IO.gets(prompt) |> String.trim()
   end
 
+  # Igual que pedir/1, pero rechaza entradas que contengan espacios.
   defp pedir_sin_espacios(prompt) do
     valor = pedir(prompt)
     if String.contains?(valor, " ") do
@@ -415,6 +442,7 @@ defmodule Inmobiliaria.ClienteMenu do
     end
   end
 
+  # Extrae el texto que se encuentra entre dos delimitadores dentro de un string.
   defp extraer_entre(texto, inicio, fin_str) do
     case Regex.run(
       ~r/#{Regex.escape(inicio)}([^#{Regex.escape(fin_str)}]+)#{Regex.escape(fin_str)}/,

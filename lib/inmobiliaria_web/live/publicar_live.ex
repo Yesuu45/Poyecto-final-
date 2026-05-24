@@ -2,6 +2,7 @@ defmodule InmobiliariaWeb.PublicarLive do
   use Phoenix.LiveView
   alias Inmobiliaria.PropertyManager
 
+  # Carga el usuario y rol al montar la vista de publicación.
   def mount(params, _session, socket) do
     usuario = Map.get(params, "usuario") || get_connect_params(socket)["usuario"]
     rol     = Map.get(params, "rol") || get_connect_params(socket)["rol"]
@@ -11,6 +12,7 @@ defmodule InmobiliariaWeb.PublicarLive do
     )}
   end
 
+  # Valida el rol y publica una nueva propiedad con los datos del formulario.
   def handle_event("publicar", params, socket) do
     case socket.assigns.rol do
       r when r in ["vendedor", "arrendador"] ->
@@ -25,6 +27,7 @@ defmodule InmobiliariaWeb.PublicarLive do
     end
   end
 
+  # Renderiza el formulario de publicación de propiedad.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen">

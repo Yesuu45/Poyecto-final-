@@ -1,6 +1,10 @@
 defmodule InmobiliariaWeb.Layouts do
   use Phoenix.Component
 
+  # Renderiza el layout base de toda la aplicación web. Carga Tailwind CSS, Phoenix y LiveView
+  # desde CDN, gestiona la sesión del usuario en localStorage (leyendo y guardando usuario/rol
+  # desde la URL), inicializa el socket de LiveView con los parámetros de sesión, y expone
+  # la función global cerrarSesion() para limpiar la sesión del navegador.
   def render("root.html", assigns) do
     ~H"""
     <!DOCTYPE html>

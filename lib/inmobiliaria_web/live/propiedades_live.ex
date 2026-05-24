@@ -3,6 +3,7 @@ defmodule InmobiliariaWeb.PropiedadesLive do
   alias Inmobiliaria.PropertyManager
   alias Inmobiliaria.MessageManager
 
+  # Carga las propiedades y el estado del usuario al montar la vista.
   def mount(params, _session, socket) do
     usuario = Map.get(params, "usuario") || get_connect_params(socket)["usuario"]
     rol     = Map.get(params, "rol") || get_connect_params(socket)["rol"]
@@ -17,21 +18,27 @@ defmodule InmobiliariaWeb.PropiedadesLive do
     )}
   end
 
+  # Aplica filtros de tipo y ciudad sobre las propiedades.
   def handle_event("filtrar", params, socket) do
     filtros = %{} |> maybe_put("tipo", params["tipo"]) |> maybe_put("ubicacion", params["ciudad"])
     props = PropertyManager.list(filtros)
     {:noreply, assign(socket, props: props, filtro_tipo: params["tipo"], filtro_ciudad: params["ciudad"])}
   end
 
+  # Alterna entre la vista de propiedades disponibles y las adquiridas.
   def handle_event("cambiar_vista", %{"vista" => v}, socket), do: {:noreply, assign(socket, vista: v)}
+  # Abre el modal de envío de mensaje para una propiedad.
   def handle_event("abrir_mensaje", %{"id" => id}, socket), do: {:noreply, assign(socket, mensaje_prop_id: id)}
+  # Cierra el modal de mensaje.
   def handle_event("cerrar_mensaje", _, socket), do: {:noreply, assign(socket, mensaje_prop_id: nil)}
 
+  # Envía un mensaje al propietario de la propiedad seleccionada.
   def handle_event("enviar_mensaje", %{"texto" => texto}, socket) do
     MessageManager.send_message(socket.assigns.usuario, socket.assigns.mensaje_prop_id, texto)
     {:noreply, socket |> assign(mensaje_prop_id: nil) |> put_flash(:info, "✓ Mensaje enviado al propietario")}
   end
 
+  # Procesa la compra de una propiedad y suma puntos al cliente y al propietario.
   def handle_event("comprar", %{"id" => id}, socket) do
     case socket.assigns.rol do
       "cliente" ->
@@ -46,6 +53,7 @@ defmodule InmobiliariaWeb.PropiedadesLive do
     end
   end
 
+  # Procesa el arriendo de una propiedad y suma puntos.
   def handle_event("arrendar", %{"id" => id}, socket) do
     case socket.assigns.rol do
       "cliente" ->
@@ -60,14 +68,17 @@ defmodule InmobiliariaWeb.PropiedadesLive do
     end
   end
 
+  # Helpers para construir el mapa de filtros ignorando valores vacíos.
   defp maybe_put(map, _k, ""), do: map
   defp maybe_put(map, _k, nil), do: map
   defp maybe_put(map, k, v), do: Map.put(map, k, v)
 
+  # Filtra las propiedades que ya fueron vendidas o arrendadas.
   defp props_adquiridas(props, usuario) do
     Enum.filter(props, fn p -> p.propietario != usuario and p.estado in ["vendida", "arrendada"] end)
   end
 
+  # Devuelve la clase CSS correspondiente al estado de una propiedad.
   defp badge(estado) do
     case estado do
       "disponible" -> "badge-disponible"
@@ -77,6 +88,7 @@ defmodule InmobiliariaWeb.PropiedadesLive do
     end
   end
 
+  # Renderiza la vista principal de propiedades con filtros, tarjetas y acciones.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen">

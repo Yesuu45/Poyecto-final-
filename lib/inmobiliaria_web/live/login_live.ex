@@ -2,10 +2,12 @@ defmodule InmobiliariaWeb.LoginLive do
   use Phoenix.LiveView
   alias Inmobiliaria.UserManager
 
+  # Inicializa la vista de login sin errores.
   def mount(_params, _session, socket) do
     {:ok, assign(socket, error: nil)}
   end
 
+  # Autentica al usuario y redirige al inicio si tiene éxito.
   def handle_event("login", %{"usuario" => u, "password" => p, "rol" => r}, socket) do
     case UserManager.conectar_con_rol(u, p, r) do
       {:ok, user} ->
@@ -15,6 +17,7 @@ defmodule InmobiliariaWeb.LoginLive do
     end
   end
 
+  # Renderiza el formulario de inicio de sesión/registro.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen flex items-center justify-center px-4">
