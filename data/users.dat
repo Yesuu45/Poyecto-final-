@@ -6,9 +6,9 @@ andrea;vendedor;vendedor9;36
 carlos;cliente;pass123;25
 carmen;arrendador;arrendador9;25
 catalina;vendedor;vendedor1;50
-diana;arrendador;arrendador1;28
+diana;arrendador;arrendador1;43
 diego;cliente;pass505;26
-elena;vendedor;vendedor7;39
+elena;vendedor;vendedor7;54
 esban ;cliente;1234;60
 esteban;vendedor;1234;30
 francisco;vendedor;vendedor4;60
@@ -20,7 +20,7 @@ lucia;cliente;pass303;20
 luis;cliente;pass404;17
 manuel;vendedor;vendedor2;42
 maria;cliente;pass456;18
-mariana;arrendador;arrendador5;44
+mariana;arrendador;arrendador5;59
 pablo;vendedor;vendedor6;33
 pedro;cliente;pass202;28
 rodrigo;arrendador;arrendador4;30
@@ -29,4 +29,4 @@ sergio;vendedor;vendedor8;41
 sofia;vendedor;vendedor3;38
 victor;arrendador;arrendador6;64
 yesuu;cliente;1234;10
-yesuu7;cliente;1234;0
+yesuu7;cliente;1234;10
