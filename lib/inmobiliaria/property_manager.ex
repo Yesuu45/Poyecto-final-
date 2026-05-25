@@ -23,9 +23,36 @@ defmodule Inmobiliaria.PropertyManager do
   def update(id, nuevo_estado), do: GenServer.cast(__MODULE__, {:update, id, nuevo_estado})
 
   # Carga las propiedades desde el archivo e inicia un proceso individual por cada una.
+  # Si el archivo está vacío, carga datos de prueba (seed) y los persiste.
   @impl true
   def init(_opts) do
     propiedades = cargar_propiedades()
+
+    propiedades =
+      if map_size(propiedades) == 0 do
+        seeds = %{
+          "prop_001" => %{id: "prop_001", tipo: "casa", modalidad: "venta",
+            ubicacion: "Armenia", precio: 250_000, habitaciones: 3,
+            area: 120, estado: "disponible", propietario: "admin"},
+          "prop_002" => %{id: "prop_002", tipo: "apartamento", modalidad: "arriendo",
+            ubicacion: "Bogota", precio: 1_500, habitaciones: 2,
+            area: 65, estado: "disponible", propietario: "admin"},
+          "prop_003" => %{id: "prop_003", tipo: "casa", modalidad: "venta",
+            ubicacion: "Medellin", precio: 180_000, habitaciones: 4,
+            area: 200, estado: "disponible", propietario: "admin"},
+          "prop_004" => %{id: "prop_004", tipo: "local", modalidad: "arriendo",
+            ubicacion: "Cali", precio: 2_000, habitaciones: 0,
+            area: 80, estado: "disponible", propietario: "admin"},
+          "prop_005" => %{id: "prop_005", tipo: "oficina", modalidad: "venta",
+            ubicacion: "Pereira", precio: 120_000, habitaciones: 0,
+            area: 55, estado: "disponible", propietario: "admin"}
+        }
+        guardar_propiedades(seeds)
+        seeds
+      else
+        propiedades
+      end
+
     Enum.each(propiedades, fn {_id, prop} -> start_property_process(prop) end)
     {:ok, propiedades}
   end
@@ -95,10 +122,10 @@ defmodule Inmobiliaria.PropertyManager do
   # Evalúa si una propiedad cumple con todos los filtros especificados.
   defp apply_filters(prop, filtros) do
     Enum.all?(filtros, fn
-      {"tipo", v} -> prop.tipo == v
-      {"modalidad", v} -> prop.modalidad == v
-      {"ubicacion", v} -> String.downcase(prop.ubicacion) == String.downcase(v)
-      {"estado", v} -> prop.estado == v
+      {"tipo", v}       -> prop.tipo == v
+      {"modalidad", v}  -> prop.modalidad == v
+      {"ubicacion", v}  -> String.downcase(prop.ubicacion) == String.downcase(v)
+      {"estado", v}     -> prop.estado == v
       {"precio_min", v} -> prop.precio >= parse_int(v)
       {"precio_max", v} -> prop.precio <= parse_int(v)
       _ -> true
@@ -106,14 +133,23 @@ defmodule Inmobiliaria.PropertyManager do
   end
 
   # Lee y parsea el archivo properties.dat para reconstruir el mapa de propiedades.
+  # Aplica String.trim/1 a cada campo para evitar errores por saltos de línea o espacios.
   defp cargar_propiedades do
     Persistence.read_lines(@filename)
     |> Enum.reduce(%{}, fn line, acc ->
-      case String.split(line, "|") do
+      case String.split(String.trim(line), "|") do
         [id, tipo, mod, ubi, prec, hab, area, est, prop] ->
-          Map.put(acc, id, %{id: id, tipo: tipo, modalidad: mod, ubicacion: ubi,
-            precio: String.to_integer(prec), habitaciones: String.to_integer(hab),
-            area: String.to_integer(area), estado: est, propietario: prop})
+          Map.put(acc, String.trim(id), %{
+            id: String.trim(id),
+            tipo: String.trim(tipo),
+            modalidad: String.trim(mod),
+            ubicacion: String.trim(ubi),
+            precio: String.to_integer(String.trim(prec)),
+            habitaciones: String.to_integer(String.trim(hab)),
+            area: String.to_integer(String.trim(area)),
+            estado: String.trim(est),
+            propietario: String.trim(prop)
+          })
         _ -> acc
       end
     end)
@@ -127,8 +163,10 @@ defmodule Inmobiliaria.PropertyManager do
   end
 
   # Genera un ID único para una nueva propiedad con formato prop_XXX.
-  defp generar_id(propiedades), do: "prop_#{String.pad_leading(Integer.to_string(map_size(propiedades) + 1), 3, "0")}"
+  defp generar_id(propiedades),
+    do: "prop_#{String.pad_leading(Integer.to_string(map_size(propiedades) + 1), 3, "0")}"
 
   # Convierte un valor a entero de forma segura.
-  defp parse_int(v), do: if(is_integer(v), do: v, else: (case Integer.parse("#{v}") do {n, _} -> n; :error -> 0 end))
+  defp parse_int(v),
+    do: if(is_integer(v), do: v, else: (case Integer.parse("#{v}") do {n, _} -> n; :error -> 0 end))
 end

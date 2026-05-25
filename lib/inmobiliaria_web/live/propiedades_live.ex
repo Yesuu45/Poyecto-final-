@@ -73,27 +73,27 @@ defmodule InmobiliariaWeb.PropiedadesLive do
   defp maybe_put(map, _k, nil), do: map
   defp maybe_put(map, k, v), do: Map.put(map, k, v)
 
-  # Filtra las propiedades que ya fueron vendidas o arrendadas.
-  defp props_adquiridas(props, usuario) do
-    Enum.filter(props, fn p -> p.propietario != usuario and p.estado in ["vendida", "arrendada"] end)
+  # Filtra las disponibles para la pestaña principal
+  defp props_disponibles(props) do
+    Enum.filter(props, fn p -> p.estado == "disponible" end)
   end
 
-  # Devuelve la clase CSS correspondiente al estado de una propiedad.
-  defp badge(estado) do
-    case estado do
-      "disponible" -> "badge-disponible"
-      "vendida"    -> "badge-vendida"
-      "arrendada"  -> "badge-arrendada"
-      _            -> "badge-default"
-    end
+  # Evalúa que seas el dueño actual (comprador/arrendatario)
+  defp props_adquiridas(props, usuario) do
+    Enum.filter(props, fn p -> p.propietario == usuario and p.estado in ["vendida", "arrendada"] end)
   end
+
+  # UNIFICADO: Devuelve la clase CSS correspondiente al estado de una propiedad.
+  defp badge("disponible"), do: "badge-disponible"
+  defp badge("vendida"),    do: "badge-vendida"
+  defp badge("arrendada"),  do: "badge-arrendada"
+  defp badge(_),            do: "badge-default"
 
   # Renderiza la vista principal de propiedades con filtros, tarjetas y acciones.
   def render(assigns) do
     ~H"""
     <div class="min-h-screen">
 
-      <%# Modal mensaje %>
       <%= if @mensaje_prop_id do %>
         <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
           <div class="bg-slate-900 border border-blue-500/30 rounded-2xl shadow-2xl glow p-8 w-full max-w-md">
@@ -115,7 +115,6 @@ defmodule InmobiliariaWeb.PropiedadesLive do
         </div>
       <% end %>
 
-      <%# Navbar %>
       <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div class="flex items-center gap-3">
@@ -154,7 +153,6 @@ defmodule InmobiliariaWeb.PropiedadesLive do
 
       <div class="max-w-7xl mx-auto px-6 py-8">
 
-        <%# Alertas %>
         <%= if Phoenix.Flash.get(@flash, :info) do %>
           <div class="bg-green-500/10 border border-green-500/30 text-green-400 p-4 rounded-xl mb-6 flex items-center gap-2">
             <span class="text-green-400">◆</span> <%= Phoenix.Flash.get(@flash, :info) %>
@@ -166,7 +164,6 @@ defmodule InmobiliariaWeb.PropiedadesLive do
           </div>
         <% end %>
 
-        <%# Tabs cliente %>
         <%= if @usuario && @rol == "cliente" do %>
           <div class="flex gap-2 mb-6">
             <button phx-click="cambiar_vista" phx-value-vista="disponibles"
@@ -187,7 +184,6 @@ defmodule InmobiliariaWeb.PropiedadesLive do
         <% end %>
 
         <%= if @vista == "disponibles" do %>
-          <%# Filtros %>
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-6">
             <form phx-change="filtrar" class="flex gap-6 flex-wrap items-center">
               <div class="flex items-center gap-3">
@@ -212,9 +208,8 @@ defmodule InmobiliariaWeb.PropiedadesLive do
             </form>
           </div>
 
-          <%# Grid propiedades %>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <%= for p <- @props do %>
+            <%= for p <- props_disponibles(@props) do %>
               <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-3 card-hover cursor-default">
                 <div class="flex justify-between items-start">
                   <span class="font-semibold text-white capitalize text-lg"><%= p.tipo %></span>
@@ -318,9 +313,4 @@ defmodule InmobiliariaWeb.PropiedadesLive do
     </div>
     """
   end
-
-  defp badge("disponible"), do: "badge-disponible"
-  defp badge("vendida"),    do: "badge-vendida"
-  defp badge("arrendada"),  do: "badge-arrendada"
-  defp badge(_),            do: "badge-default"
 end
