@@ -133,6 +133,36 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
+  # Permite al propietario editar la modalidad y/o estado de su propiedad.
+  defp dispatch("edit_property " <> resto, state) do
+    with :ok <- require_login(state),
+         :ok <- require_rol(state, ["vendedor", "arrendador", "cliente"]) do
+      case String.split(String.trim(resto), " ", parts: 2) do
+        [prop_id, attrs_str] ->
+          cambios =
+            parse_attrs(String.split(attrs_str, " ", trim: true))
+            |> Map.take(["modalidad", "estado", "precio"])
+            |> Enum.reduce(%{}, fn
+              {"precio", v}, acc    -> Map.put(acc, :precio, parse_int(v))
+              {"modalidad", v}, acc -> Map.put(acc, :modalidad, v)
+              {"estado", v}, acc    -> Map.put(acc, :estado, v)
+              _, acc                -> acc
+            end)
+          case PropertyManager.editar(prop_id, state.username, cambios) do
+            {:ok, prop} ->
+              enviar(state.socket, "[ok] Propiedad #{prop.id} actualizada: modalidad=#{prop.modalidad} estado=#{prop.estado}\n")
+            {:error, r} ->
+              enviar(state.socket, "[error] #{r}\n")
+          end
+        _ ->
+          enviar(state.socket, "[error] Uso: edit_property prop_id modalidad=X estado=X precio=X\n")
+      end
+    else
+      {:error, msg} -> enviar(state.socket, "[error] #{msg}\n")
+    end
+    state
+  end
+
   # Envía un mensaje sobre una propiedad al propietario correspondiente.
   defp dispatch("send_message " <> resto, state) do
     with :ok <- require_login(state) do
@@ -154,7 +184,6 @@ defmodule Inmobiliaria.ClientHandler do
     state
   end
 
-  # NUEVO: reply_message destinatario prop_id texto
   # Permite que el vendedor/arrendador responda directamente a un cliente.
   defp dispatch("reply_message " <> resto, state) do
     with :ok <- require_login(state) do
@@ -226,6 +255,7 @@ defmodule Inmobiliaria.ClientHandler do
     list_properties [tipo=X] [modalidad=X] [ubicacion=X]
     buy_property <prop_id>
     rent_property <prop_id>
+    edit_property <prop_id> modalidad=X estado=X precio=X
     send_message <prop_id> <mensaje>
     reply_message <destinatario> <prop_id> <mensaje>
     my_messages
@@ -262,9 +292,44 @@ defmodule Inmobiliaria.ClientHandler do
     Enum.reduce(lista, %{}, fn item, acc ->
       case String.split(item, "=", parts: 2) do
         [k, v] -> Map.put(acc, k, v)
-        _ -> acc
+        _      -> acc
       end
     end)
+  end
+  defp dispatch("edit_property " <> resto, state) do
+    with :ok <- require_login(state),
+         :ok <- require_rol(state, ["vendedor", "arrendador", "cliente"]) do
+      case String.split(String.trim(resto), " ", parts: 2) do
+        [prop_id, attrs_str] ->
+          cambios = parse_attrs(String.split(attrs_str, " ", trim: true))
+                    |> Map.take(["modalidad", "estado", "precio"])
+                    |> Map.new(fn
+                      {"precio", v}    -> {:precio, parse_int(v)}
+                      {"modalidad", v} -> {:modalidad, v}
+                      {"estado", v}    -> {:estado, v}
+                    end)
+          case PropertyManager.editar(prop_id, state.username, cambios) do
+            {:ok, prop} ->
+              enviar(state.socket, "[ok] Propiedad #{prop.id} actualizada: modalidad=#{prop.modalidad} estado=#{prop.estado}\n")
+            {:error, r} ->
+              enviar(state.socket, "[error] #{r}\n")
+          end
+        _ ->
+          enviar(state.socket, "[error] Uso: edit_property prop_id modalidad=X estado=X\n")
+      end
+    else
+      {:error, msg} -> enviar(state.socket, "[error] #{msg}\n")
+    end
+    state
+  end
+
+  # Convierte un valor a entero de forma segura.
+  defp parse_int(v) when is_integer(v), do: v
+  defp parse_int(v) do
+    case Integer.parse("#{v}") do
+      {n, _} -> n
+      :error -> 0
+    end
   end
 
   # Guarda en results.log el registro de una compra o arriendo completada.
